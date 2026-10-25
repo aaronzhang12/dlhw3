@@ -22,14 +22,21 @@ class LeakyReLU(Activation):
 
     def forward(self, x) -> Tensor:
         """Leaky ReLu forward propagation!"""
-        return NotImplementedError
+        return Tensor(np.where(x>0, x, self.alpha*x))
 
     def get_input_gradients(self) -> list[Tensor]:
         """
         Leaky ReLu backpropagation!
         Hint: Make sure not to mutate any instance variables. Return a new list[tensor(s)]
         """
-        raise NotImplementedError
+        x = self.inputs[0]
+        conditions = [
+            x > 0,
+            x == 0,
+            x < 0
+        ]
+        choices = [1, 0, self.alpha]
+        return [Tensor(np.select(conditions, choices))]
 
     def compose_input_gradients(self, J):
         return self.get_input_gradients()[0] * J
@@ -48,10 +55,17 @@ class GELU(Activation):
     ## TODO: Implement GELU for intermediate activation. Hint: Use the tanh approximation for GELU, which is faster to compute than the exact formula.
     
     def forward(self, x: Tensor) -> Tensor:
-        raise NotImplementedError
+        return Tensor(1/2*x*(1 + np.tanh(np.sqrt(2/np.pi)*(x + 0.044715*x*x*x))))
 
     def get_input_gradients(self) -> List[Tensor]:
-        raise NotImplementedError
+        x = self.inputs[0]
+        # first compute u and its derivative then chain
+        u = np.sqrt(2/np.pi)*(x + 0.044715*x*x*x)
+        du = np.sqrt(2/np.pi)*(1 + 3*0.044715*x*x)
+        dtu = (1 - np.tanh(u)*np.tanh(u))*du
+        # fully solve for gelu
+        gelu = 1/2*(1 + np.tanh(u)) + 1/2*x*dtu
+        return [Tensor(gelu)]
 
     def compose_input_gradients(self, J: Tensor) -> Tensor:
         return self.get_input_gradients()[0] * J
@@ -65,13 +79,14 @@ class Sigmoid(Activation):
     ## TODO: Implement for default output activation to bind output to 0-1
     
     def forward(self, x) -> Tensor:
-        raise NotImplementedError
+        return Tensor(1/(1+np.exp(-x)))
 
     def get_input_gradients(self) -> list[Tensor]:
         """
         Hint: Make sure not to mutate any instance variables. Return a new list[tensor(s)]
         """
-        raise NotImplementedError
+        y = self.outputs[0]
+        return [Tensor(y*(1-y))]
 
     def compose_input_gradients(self, J):
         return self.get_input_gradients()[0] * J
@@ -90,7 +105,9 @@ class Softmax(Activation):
 
         ## HINT: Use stable softmax, which subtracts maximum from
         ## all entries to prevent overflow/underflow issues
-        raise NotImplementedError
+        shifted = x - np.max(x, axis = -1, keepdims = True)
+        exps = np.exp(shifted)
+        return Tensor(exps/np.sum(exps, axis = -1, keepdims = True))
 
     def get_input_gradients(self):
         """Softmax input gradients!"""
@@ -99,4 +116,11 @@ class Softmax(Activation):
         grad = np.zeros(shape=(bn, n, n), dtype=x.dtype)
         
         # TODO: Implement softmax gradient
-        raise NotImplementedError
+        for i,p in enumerate(y):
+            jacobian = -np.outer(p, p)
+            np.fill_diagonal(jacobian, p*(1-p))
+            grad[i] = jacobian
+
+        return [Tensor(grad)]
+        
+        
