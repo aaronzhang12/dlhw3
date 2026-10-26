@@ -6,6 +6,7 @@ from beras.activations import ReLU, Softmax
 from beras.layers import Dense
 from beras.losses import CategoricalCrossEntropy
 from beras.metrics import CategoricalAccuracy
+from beras.onehot import OneHotEncoder
 from beras.optimizers import Adam
 from preprocess import load_and_preprocess_data
 
@@ -40,6 +41,10 @@ if __name__ == "__main__":
     model = get_model()
     model.compile(get_optimizer(), get_loss_fn(), get_acc_fn())
     train_x, train_y, test_x, test_y = load_and_preprocess_data()
+    encoder = OneHotEncoder()
+    encoder.fit(train_y)
+    train_y = encoder(train_y)
+    test_y = encoder(test_y)
 
     history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size)
     print("\nTest results:")

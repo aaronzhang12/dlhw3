@@ -1,5 +1,4 @@
 import numpy as np
-from beras.onehot import OneHotEncoder
 from beras.core import Tensor
 from tensorflow.keras import datasets
 
@@ -18,11 +17,9 @@ def load_and_preprocess_data() -> tuple[Tensor, Tensor, Tensor, Tensor]:
     train_inputs = Tensor(train_inputs.reshape(train_inputs.shape[0], -1).astype(np.float32)/255.0)
     test_inputs = Tensor(test_inputs.reshape(test_inputs.shape[0], -1).astype(np.float32)/255.0)
 
-    encoder = OneHotEncoder()
-    encoder.fit(train_labels)
-
-    train_labels = encoder(train_labels)
-    test_labels = encoder(test_labels)
+    # Keep the original class IDs; the training script performs one-hot encoding.
+    train_labels = Tensor(train_labels)
+    test_labels = Tensor(test_labels)
 
     return train_inputs, train_labels, test_inputs, test_labels
 
