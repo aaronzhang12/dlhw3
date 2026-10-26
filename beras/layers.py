@@ -64,16 +64,10 @@ class Dense(Diffable):
         elif initializer == "normal":
             weights = rng.standard_normal((input_size, output_size))
         elif initializer == "xavier":
-            sigma = np.sqrt(2/(input_size + output_size))
-            # Match GlorotNormal: reject samples beyond two standard deviations.
-            # Truncating N(0, 1) to [-2, 2] gives stddev 0.87962566103423978,
-            # so compensate to keep the final variance at 2 / (fan_in + fan_out).
-            weights = rng.standard_normal((input_size, output_size))
-            outside = np.abs(weights) > 2
-            while np.any(outside):
-                weights[outside] = rng.standard_normal(np.count_nonzero(outside))
-                outside = np.abs(weights) > 2
-            weights *= sigma / 0.87962566103423978
+            sigma = np.sqrt(2.0 / (input_size + output_size))
+            weights = np.random.normal(
+                loc=0.0, scale=sigma, size=(input_size, output_size)
+            )
         elif initializer == "kaiming":
             sigma = np.sqrt(2/input_size)
             weights = rng.normal(scale = sigma, size = (input_size, output_size))
