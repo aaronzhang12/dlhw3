@@ -1,46 +1,47 @@
-from types import SimpleNamespace
-from beras.activations import ReLU, LeakyReLU, Softmax
+from pathlib import Path
+
+import numpy as np
+
+from beras.activations import ReLU, Softmax
 from beras.layers import Dense
-from beras.losses import CategoricalCrossEntropy, MeanSquaredError
+from beras.losses import CategoricalCrossEntropy
 from beras.metrics import CategoricalAccuracy
-from beras.onehot import OneHotEncoder
 from beras.optimizers import Adam
 from preprocess import load_and_preprocess_data
-import numpy as np
 
 from beras.model import SequentialModel
 
 def get_model():
     model = SequentialModel(
         [
-           # Add in your layers here as elements of the list!
-           # e.g. Dense(10, 10),
+            Dense(784, 128, initializer="kaiming"),
+            ReLU(),
+            Dense(128, 64, initializer="kaiming"),
+            ReLU(),
+            Dense(64, 10, initializer="xavier"),
+            Softmax(),
         ]
     )
     return model
 
 def get_optimizer():
-    # choose an optimizer, initialize it and return it!
-    return ...
+    return Adam(learning_rate=1e-3)
 
 def get_loss_fn():
-    # choose a loss function, initialize it and return it!
-    return ...
+    return CategoricalCrossEntropy()
 
 def get_acc_fn():
-    # choose an accuracy metric, initialize it and return it!
-    return ...
+    return CategoricalAccuracy()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    epochs = 8
+    batch_size = 64
 
-    ### Use this area to test your implementation!
+    model = get_model()
+    model.compile(get_optimizer(), get_loss_fn(), get_acc_fn())
+    train_x, train_y, test_x, test_y = load_and_preprocess_data()
 
-    # 1. Create a SequentialModel using get_model
-
-    # 2. Compile the model with optimizer, loss function, and accuracy metric
-    
-    # 3. Load and preprocess the data
-    
-    # 4. Train the model
-
-    # 5. Evaluate the model
+    history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size)
+    print("\nTest results:")
+    metrics, predictions = model.evaluate(test_x, test_y, batch_size=batch_size)
+    np.save(Path(__file__).resolve().parent / "predictions.npy", predictions)

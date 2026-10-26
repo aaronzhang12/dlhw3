@@ -80,13 +80,16 @@ class Model(Diffable):
         into the batch_step method with training. At the end, the metrics are returned.
         """
         history = defaultdict(list)
+        rng = np.random.default_rng()
         for i in range(epochs):
             epoch_stats = defaultdict(list)
+            indices = rng.permutation(len(x))
             for j in range(math.ceil(len(x) / batch_size)):
                 batch_start = j*batch_size
                 batch_end = min((j+1)*batch_size, len(x))
-                batch_x = x[batch_start: batch_end, ]
-                batch_y = y[batch_start: batch_end, ]
+                batch_indices = indices[batch_start:batch_end]
+                batch_x = x[batch_indices]
+                batch_y = y[batch_indices]
                 metrics = self.batch_step(batch_x, batch_y, training = True)
                 # get batch metrics and add to the current epoch stats
                 update_metric_dict(epoch_stats, metrics)
@@ -110,7 +113,7 @@ class Model(Diffable):
         batch_sizes = []
         for j in range(math.ceil(x.shape[0] / batch_size)):
             batch_start = j*batch_size
-            batch_end = max((j+1)*batch_size, x.shape[0])
+            batch_end = min((j+1)*batch_size, x.shape[0])
             batch_x = x[batch_start: batch_end, ]
             batch_y = y[batch_start: batch_end, ]
             batch_metrics, batch_predictions = self.batch_step(batch_x, batch_y, training = False)
